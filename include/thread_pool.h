@@ -66,14 +66,13 @@ public:
   //   return future;
   // }
 
-  template<typename F>
-  void Dispatch(F&& func) noexcept {
+  void Dispatch(Functor&& func) noexcept {
     auto i = index_++;
 
     for(unsigned n = 0; n < count_; ++n) {
-      if(queues_[(i+n) % count_].TryEnqueue(std::forward<F>(func))) return;
+      if(queues_[(i+n) % count_].TryEnqueue(std::forward<Functor>(func))) return;
     }
-    queues_[i%count_].Enqueue(std::forward<F>(func));
+    queues_[i%count_].Enqueue(std::forward<Functor>(func));
   }
 
 private:
