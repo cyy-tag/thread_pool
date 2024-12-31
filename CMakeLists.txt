@@ -8,7 +8,7 @@ message(STATUS "Current build type: ${CMAKE_BUILD_TYPE}")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 23)
 
-add_compile_options(-g)
+add_compile_options(-g -D_GLIBCXX_DEBUG_BACKTRACE)
 include_directories(include/)
 
 include(FetchContent)

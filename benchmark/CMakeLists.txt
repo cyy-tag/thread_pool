@@ -1,2 +1,2 @@
 add_executable(thread_pool_benchmark thread_pool_benchmark.cpp)
-target_link_libraries(thread_pool_benchmark PRIVATE benchmark::benchmark)
+target_link_libraries(thread_pool_benchmark PRIVATE benchmark::benchmark stdc++exp stdc++_libbacktrace)

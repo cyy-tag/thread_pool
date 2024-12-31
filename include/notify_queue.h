@@ -1,4 +1,5 @@
 #pragma once
+#include <cassert>
 #include <concepts>
 #include <condition_variable>
 #include <mutex>
@@ -25,16 +26,21 @@ class NotifyQueue {
     NotifyQueue(const NotifyQueue&)=delete;
     NotifyQueue& operator&(const NotifyQueue&)=delete;
 
-    void Enqueue(T&& value) noexcept {
+    template<typename Ptr>
+    void Enqueue(T&& value, int id, Ptr& ptr) noexcept {
       {
+        // printf("enqueue-id %d use_count %ld\n", id, ptr.use_count());
         lock_t lk{mutex_};
         q_.emplace(std::forward<T>(value));
       }
+      // printf("enqueue id %d use_count %ld\n", id, ptr.use_count());
       cv_.notify_one();
     }
 
-    [[nodiscard]] bool TryEnqueue(T&& value) noexcept {
+    template<typename Ptr>
+    [[nodiscard]] bool TryEnqueue(T&& value, int id, Ptr& ptr) noexcept {
       {
+        assert((ptr.use_count()) != 2 && "error use_count");
         lock_t lk{mutex_, std::try_to_lock};
         if(!lk) return false;
         q_.emplace(std::forward<T>(value));

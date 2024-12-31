@@ -23,14 +23,17 @@ public:
   std::mt19937 gen_{rd_()};
   uint32_t random_val_;
   util::ThreadPool<> thread_pool{std::thread::hardware_concurrency()};
+  std::vector<uint32_t> values_;
 
   ThreadPoolBenchMark() {
-
+    std::uniform_int_distribution<> distrib(1, 100001);
+    for(int i = 0; i < 1000; ++i) {
+      values_.emplace_back(distrib(gen_));
+    }
   }
 
   void SetUp(const ::benchmark::State& state) override {
-    std::uniform_int_distribution<> distrib(1, 100001);
-    random_val_ = distrib(gen_);
+
   }
 
   void TearDown(const ::benchmark::State& state) override {
@@ -39,12 +42,18 @@ public:
 
 BENCHMARK_DEFINE_F(ThreadPoolBenchMark, BM_ThreadPool)(benchmark::State& state) {
   for (auto _ : state) {
-    std::promise<bool> promise;
-    auto future = promise.get_future();
-    thread_pool.Dispatch([&](){
-      promise.set_value(is_prime(random_val_));
-    });
-    future.get();
+    std::vector<Future<bool>> futures;
+    for(const auto& value : values_) {
+      futures.emplace_back(std::move(thread_pool.Post(is_prime, value)));
+    }
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    for(auto&& future : futures) {
+      if(future.valid()) {
+        future.get();
+      } else {
+        printf("future not valid\n");
+      }
+    }
   }
 }
 
