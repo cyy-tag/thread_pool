@@ -40,6 +40,7 @@ class NotifyQueue {
     template<typename Ptr>
     [[nodiscard]] bool TryEnqueue(T&& value, int id, Ptr& ptr) noexcept {
       {
+        static_assert(std::is_rvalue_reference<decltype(value)>::value);
         assert((ptr.use_count()) != 2 && "error use_count");
         lock_t lk{mutex_, std::try_to_lock};
         if(!lk) return false;

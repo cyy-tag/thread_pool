@@ -56,40 +56,37 @@ public:
 
   template<typename F, typename... Args, typename R=std::result_of_t<F&&(Args&&...)>>
   Future<R> Post(F&& func, Args&&... args) noexcept {
-    auto promise_ptr = std::make_shared<CustomPromise<R>>();
-    int id = promise_ptr->ID();
-    auto future = promise_ptr->get_future();
+    auto promise = CustomPromise<R>();
+    auto future = promise.get_future();
+    int id = promise.ID();
+    auto t_ptr = std::shared_ptr<int>();
     Dispatch([f = std::move(func),
               ... largs = std::move(args),
-              promise_ptr,
-              id] {
+              promise = std::move(promise),
+              id] mutable {
                   R result = std::invoke(f, largs...);
-                  if(!promise_ptr) {
-                    printf("empty id %d\n", id);
-                  } else {
-                    promise_ptr->set_value(std::move(result));
-                  }
-              }, id, promise_ptr);
+                  promise.set_value(std::move(result));
+              }, id, t_ptr);
     return future;
   }
 
-  template<typename F>
-  void Dispatch(F&& func) noexcept {
+  void Dispatch(Functor&& func) noexcept {
     auto t_ptr = std::shared_ptr<int>();
     auto i = index_++;
     for(unsigned n = 0; n < count_; ++n) {
-      if(queues_[(i+n) % count_].TryEnqueue(std::forward<F>(func), 1, t_ptr)) return;
+      if(queues_[(i+n) % count_].TryEnqueue(std::forward<Functor>(func), 1, t_ptr)) return;
     }
-    queues_[i%count_].Enqueue(std::forward<F>(func), 1, t_ptr);
+    queues_[i%count_].Enqueue(std::forward<Functor>(func), 1, t_ptr);
   }
 
-  template<typename F, typename Ptr>
-  void Dispatch(F&& func, int id, Ptr& ptr) noexcept {
+  template<typename Ptr>
+  void Dispatch(Functor&& func, int id, Ptr& ptr) noexcept {
+    static_assert(std::is_rvalue_reference<decltype(func)>::value);
     auto i = index_++;
     for(unsigned n = 0; n < count_; ++n) {
-      if(queues_[(i+n) % count_].TryEnqueue(std::forward<F>(func), id, ptr)) return;
+      if(queues_[(i+n) % count_].TryEnqueue(std::forward<Functor>(func), id, ptr)) return;
     }
-    queues_[i%count_].Enqueue(std::forward<F>(func), id, ptr);
+    queues_[i%count_].Enqueue(std::forward<Functor>(func), id, ptr);
   }
 
 private:

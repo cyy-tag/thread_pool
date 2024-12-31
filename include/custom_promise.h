@@ -47,14 +47,14 @@ public:
   {
     self_id = ++global_id_;
     promise_ptr = new std::promise<Res>();
-    // printf("promise-id %d ctor addr %p\n", self_id, (void*)this);
+    printf("promise-id %d ctor addr %p\n", self_id, (void*)this);
   }
 
   ~CustomPromise() {
     if(promise_ptr) {
         std::stacktrace st = std::stacktrace::current();
-        // printf("stacktrace delete id %d %s\n", self_id, std::to_string(st).c_str());
-      delete promise_ptr;
+        printf("stacktrace %p delete id %d %s\n", (void*)this, self_id, std::to_string(st).c_str());
+        delete promise_ptr;
     }
   }
 
@@ -66,7 +66,7 @@ public:
     self_id = rhs.self_id;
     promise_ptr = rhs.promise_ptr;
     rhs.promise_ptr = nullptr;
-    // printf("promise-id %d move ctor %p to %p\n", self_id, (void*)&rhs, (void*)this);
+    printf("promise-id %d move ctor %p to %p\n", self_id, (void*)&rhs, (void*)this);
   }
 
   CustomPromise& operator=(CustomPromise&& rhs) {
@@ -74,18 +74,18 @@ public:
       promise_ptr = rhs.promise_ptr;
       rhs.promise_ptr = nullptr;
       self_id = rhs.self_id;
-      // printf("promise-id %d move assigned %p to %p\n", self_id, (void*)&rhs, (void*)this);
+      printf("promise-id %d move assigned %p to %p\n", self_id, (void*)&rhs, (void*)this);
     }
     return *this;
   }
 
   Future<Res> get_future() {
-    // printf("promise-id %d get future, %p\n", self_id, (void*)this);
+    printf("promise-id %d get future, %p\n", self_id, (void*)this);
     return Future<Res>(self_id, std::move(promise_ptr->get_future()));
   }
 
   void set_value(Res&& value) {
-    // printf("promise-id %d set value %p\n", self_id, (void*)this);
+    printf("promise-id %d set value %p\n", self_id, (void*)this);
     promise_ptr->set_value(std::forward<Res>(value));
   }
 
