@@ -43,23 +43,23 @@ class NotifyQueue {
       return true;
     }
 
-    [[nodiscard]] std::pair<bool, T> Dequeue() noexcept {
+    [[nodiscard]] bool Dequeue(T& value) noexcept {
       lock_t lk{mutex_};
       while(q_.empty() && !done_) {
         cv_.wait(lk);
       }
-      if(q_.empty()) return {done_, nullptr};
-      auto result = std::move(q_.front());
+      if(q_.empty()) return true;
+      value = std::move(q_.front());
       q_.pop();
-      return {false, std::move(result)};
+      return false;
     }
 
-    [[nodiscard]] T TryDequeue() noexcept {
+    void TryDequeue(T& value) noexcept {
       lock_t lk{mutex_, std::try_to_lock};
-      if(!lk || q_.empty()) return nullptr;
-      auto result = std::move(q_.front());
+      if(!lk || q_.empty()) return;
+      value = std::move(q_.front());
       q_.pop();
-      return result;
+      return;
     }
 
     [[nodiscard]] size_type Size() const noexcept {

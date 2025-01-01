@@ -17,10 +17,8 @@ protected:
 
 TEST_F(ThreadPoolTest, TestExample) {
   for(int i = 0; i < 1000; ++i) {
-    auto promise = std::promise<int>{};
-    auto future = promise.get_future();
-    thread_pool_.Dispatch([&]{
-        promise.set_value(i);
+    auto future = thread_pool_.Post([&]() noexcept {
+        return i;
       });
     EXPECT_EQ(i, future.get());
   }
